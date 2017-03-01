@@ -36,7 +36,7 @@ impl ElementNode {
         }
     }
 
-    fn element<'a>(&'a self) -> &'a Element {
+    fn element(&self) -> &Element {
         &*self.element
     }
 
@@ -58,8 +58,8 @@ impl ElementNodeRef {
         ElementNodeWeakRef::new(Rc::downgrade(&self.node))
     }
 
-    pub fn element<'a>(&'a self) -> Ref<'a, Element> {
-        Ref::map(self.node.borrow(), |n| n.element::<'a>())
+    pub fn element(&self) -> Ref<Element> {
+        Ref::map(self.node.borrow(), |n| n.element())
     }
 
     pub fn add_child<T: Element + 'static>(&mut self, element: T) {
