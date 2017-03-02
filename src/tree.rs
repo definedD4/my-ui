@@ -36,7 +36,7 @@ impl ElementNode {
         }
     }
 
-    fn element(&self) -> &Element {
+    fn element(&self) -> &(Element + 'static) {
         &*self.element
     }
 
@@ -46,6 +46,10 @@ impl ElementNode {
 
     fn children_mut(&mut self) -> &mut Vec<ElementNodeRef> {
         &mut self.children
+    }
+
+    fn parrent(&self) -> Option<ElementNodeRef> {
+        self.parrent.as_ref().and_then(|r| r.upgrade())
     }
 }
 
@@ -58,8 +62,12 @@ impl ElementNodeRef {
         ElementNodeWeakRef::new(Rc::downgrade(&self.node))
     }
 
-    pub fn element(&self) -> Ref<Element> {
+    pub fn element(&self) -> Ref<Element + 'static> {
         Ref::map(self.node.borrow(), |n| n.element())
+    }
+
+    pub fn children(&self) -> Ref<[ElementNodeRef]> {
+        Ref::map(self.node.borrow(), |n| n.children())
     }
 
     pub fn add_child<T: Element + 'static>(&mut self, element: T) {
@@ -79,9 +87,8 @@ impl ElementNodeWeakRef {
         ElementNodeWeakRef { node: node}
     }
 
-    pub fn upgrade(&self) -> ElementNodeRef {
-        // TODO: remove unwrap
-        ElementNodeRef::new(Weak::upgrade(&self.node).unwrap())
+    pub fn upgrade(&self) -> Option<ElementNodeRef> {
+        Weak::upgrade(&self.node).map(|r| ElementNodeRef::new(r))
     }
 }
 
