@@ -1,6 +1,6 @@
 use std::rc::{Rc, Weak};
 use std::cell::{RefCell, Ref};
-
+use std::cmp::Eq;
 
 pub trait Element {
     fn print(&self);
@@ -80,7 +80,18 @@ impl ElementNodeRef {
             )
         )
     }
+
+    fn parrent(&self) -> Option<ElementNodeRef> {
+        self.node.borrow().parrent()
+    }
 }
+
+impl PartialEq for ElementNodeRef {
+    fn eq(&self, other: &ElementNodeRef) -> bool {
+        Rc::ptr_eq(&self.node, &other.node)
+    }
+}
+impl Eq for ElementNodeRef {}
 
 impl ElementNodeWeakRef {
     fn new(node: Weak<RefCell<ElementNode>>) -> ElementNodeWeakRef {
@@ -108,5 +119,42 @@ impl ElementTree {
                 None
             ))))
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+    impl Element for i32 {
+        fn print(&self) {
+            println!("{}", &self);
+        }
+    }
+
+    use super::*;
+
+    #[test]
+    fn new_tree_has_empty_root() {
+        let tree = ElementTree::new();
+        assert!(tree.root() == None);
+    }
+
+    #[test]
+    fn tree_set_root_sets_root() {
+        let mut tree = ElementTree::new();
+        tree.set_root(Some(42));
+
+        let root = tree.root();
+
+        assert!(root.is_some());
+    }
+
+    #[test]
+    fn tree_root_has_no_parrent() {
+        let mut tree = ElementTree::new();
+        tree.set_root(Some(42));
+
+        let root = tree.root().unwrap();
+
+        assert!(root.parrent() == None);
     }
 }

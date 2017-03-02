@@ -1,3 +1,5 @@
+#![feature(ptr_eq)]
+
 extern crate glutin;
 
 mod primitives;
