@@ -1,160 +1,197 @@
 use std::rc::{Rc, Weak};
-use std::cell::{RefCell, Ref};
+use std::cell::{RefCell, Ref, RefMut};
 use std::cmp::Eq;
 
-pub trait Element {
-    fn print(&self);
+struct Node<T> {
+    data: T,
+    parrent: Option<NodeWeakRef<T>>,
+    children: Vec<NodeRef<T>>,
 }
 
-struct ElementNode {
-    element: Box<Element>,
-    parrent: Option<ElementNodeWeakRef>,
-    children: Vec<ElementNodeRef>,
+pub struct NodeRef<T> {
+    node: Rc<RefCell<Node<T>>>,
 }
 
-#[derive(Clone)]
-pub struct ElementNodeRef {
-    node: Rc<RefCell<ElementNode>>,
+pub struct NodeWeakRef<T> {
+    node: Weak<RefCell<Node<T>>>,
 }
 
-#[derive(Clone)]
-pub struct ElementNodeWeakRef {
-    node: Weak<RefCell<ElementNode>>,
+pub struct Tree<T> {
+    root: Option<NodeRef<T>>,
 }
 
-pub struct ElementTree {
-    root: Option<ElementNodeRef>,
-}
-
-impl ElementNode {
-    fn new(element: Box<Element>,
-           parrent: Option<ElementNodeWeakRef>) -> ElementNode {
-        ElementNode { 
-            element: element,
+impl<T> Node<T> {
+    fn new(data: T,
+           parrent: Option<NodeWeakRef<T>>) -> Node<T> {
+        Node { 
+            data: data,
             parrent: parrent,
             children: Vec::new(),
         }
     }
 
-    fn element(&self) -> &(Element + 'static) {
-        &*self.element
+    fn data(&self) -> &T {
+        &self.data
     }
 
-    fn children(&self) -> &[ElementNodeRef] {
+    fn data_mut(&mut self) -> &mut T {
+        &mut self.data
+    }
+
+    fn children(&self) -> &[NodeRef<T>] {
         &self.children
     }
 
-    fn children_mut(&mut self) -> &mut Vec<ElementNodeRef> {
+    fn children_mut(&mut self) -> &mut Vec<NodeRef<T>> {
         &mut self.children
     }
 
-    fn parrent(&self) -> Option<ElementNodeRef> {
+    fn parrent(&self) -> Option<NodeRef<T>> {
         self.parrent.as_ref().and_then(|r| r.upgrade())
     }
 }
 
-impl ElementNodeRef {
-    fn new(node: Rc<RefCell<ElementNode>>) -> ElementNodeRef {
-        ElementNodeRef { node: node}
+impl<T> NodeRef<T> {
+    fn new(node: Rc<RefCell<Node<T>>>) -> NodeRef<T> {
+        NodeRef { node: node }
     }
 
-    pub fn downgrade(&self) -> ElementNodeWeakRef {
-        ElementNodeWeakRef::new(Rc::downgrade(&self.node))
+    fn new_node(data: T, parrent: Option<NodeWeakRef<T>>) -> NodeRef<T> {
+        NodeRef::new(Rc::new(RefCell::new(Node::new(data, parrent))))
     }
 
-    pub fn element(&self) -> Ref<Element + 'static> {
-        Ref::map(self.node.borrow(), |n| n.element())
+    pub fn downgrade(&self) -> NodeWeakRef<T> {
+        NodeWeakRef::new(Rc::downgrade(&self.node))
     }
 
-    pub fn children(&self) -> Ref<[ElementNodeRef]> {
+    pub fn data(&self) -> Ref<T> {
+        Ref::map(self.node.borrow(), |n| n.data())
+    }
+
+    pub fn data_mut(&mut self) -> RefMut<T> {
+        RefMut::map(self.node.borrow_mut(), |n| n.data_mut())
+    }
+
+    pub fn children(&self) -> Ref<[NodeRef<T>]> {
         Ref::map(self.node.borrow(), |n| n.children())
     }
 
-    pub fn add_child<T: Element + 'static>(&mut self, element: T) {
+    pub fn add_child(&mut self, child: T) {
         self.node.borrow_mut().children_mut().push(
-            ElementNodeRef::new(
-                Rc::new(RefCell::new(ElementNode::new(
-                    Box::new(element),
-                    Some(self.downgrade())
-                )))
-            )
-        )
+            NodeRef::new_node(child, Some(self.downgrade()))
+        );
     }
 
-    fn parrent(&self) -> Option<ElementNodeRef> {
+    fn parrent(&self) -> Option<NodeRef<T>> {
         self.node.borrow().parrent()
     }
 }
 
-impl PartialEq for ElementNodeRef {
-    fn eq(&self, other: &ElementNodeRef) -> bool {
+impl<T> Clone for NodeRef<T> {
+    fn clone(&self) -> NodeRef<T> {
+        NodeRef::new(self.node.clone())
+    }
+}
+
+impl<T> PartialEq for NodeRef<T> {
+    fn eq(&self, other: &NodeRef<T>) -> bool {
         Rc::ptr_eq(&self.node, &other.node)
     }
 }
-impl Eq for ElementNodeRef {}
+impl<T> Eq for NodeRef<T> {}
 
-impl ElementNodeWeakRef {
-    fn new(node: Weak<RefCell<ElementNode>>) -> ElementNodeWeakRef {
-        ElementNodeWeakRef { node: node}
+impl<T> NodeWeakRef<T> {
+    fn new(node: Weak<RefCell<Node<T>>>) -> NodeWeakRef<T> {
+        NodeWeakRef { node: node }
     }
 
-    pub fn upgrade(&self) -> Option<ElementNodeRef> {
-        Weak::upgrade(&self.node).map(|r| ElementNodeRef::new(r))
+    pub fn empty() -> NodeWeakRef<T> {
+        NodeWeakRef { node: Weak::new() }
+    }
+
+    pub fn upgrade(&self) -> Option<NodeRef<T>> {
+        Weak::upgrade(&self.node).map(|r| NodeRef::new(r))
     }
 }
 
-impl ElementTree {
-    pub fn new() -> ElementTree {
-        ElementTree { root: None }
+impl<T> Clone for NodeWeakRef<T> {
+    fn clone(&self) -> NodeWeakRef<T> {
+        NodeWeakRef::new(self.node.clone())
+    }
+}
+
+impl<T> Tree<T> {
+    pub fn new() -> Tree<T> {
+        Tree { root: None }
     }
 
-    pub fn root(&self) -> Option<ElementNodeRef> {
-        self.root.clone()
+    pub fn root(&self) -> Option<NodeRef<T>> {
+        self.root.as_ref().map(|r| r.clone())
     }
 
-    pub fn set_root<T: Element + 'static>(&mut self, element: Option<T>) {
-        self.root = element.map(|e| ElementNodeRef::new(
-            Rc::new(RefCell::new(ElementNode::new(
-                Box::new(e),
-                None
-            ))))
-        )
+    pub fn set_root(&mut self, data: Option<T>) {
+        self.root = data.map(|d| NodeRef::new_node(d, None))
     }
 }
 
 #[cfg(test)]
-mod test {
-    impl Element for i32 {
-        fn print(&self) {
-            println!("{}", &self);
-        }
-    }
-
+mod tests {
     use super::*;
 
     #[test]
     fn new_tree_has_empty_root() {
-        let tree = ElementTree::new();
+        let tree = Tree::<i32>::new();
         assert!(tree.root() == None);
     }
 
     #[test]
     fn tree_set_root_sets_root() {
-        let mut tree = ElementTree::new();
+        let mut tree = Tree::<i32>::new();
         tree.set_root(Some(42));
 
         let root = tree.root();
 
         assert!(root.is_some());
+
+        let root = root.unwrap();
+        
+        assert_eq!(*root.data(), 42);
     }
 
     #[test]
     fn tree_root_has_no_parrent() {
-        let mut tree = ElementTree::new();
+        let mut tree = Tree::<i32>::new();
         tree.set_root(Some(42));
 
         let root = tree.root().unwrap();
 
         assert!(root.parrent() == None);
+    }
+
+    #[test]
+    fn add_child_adds_child() {
+        let mut tree = Tree::<i32>::new();
+        tree.set_root(Some(0));
+        let mut root = tree.root().unwrap();
+
+        assert_eq!(root.children().len(), 0);
+        
+        root.add_child(1);
+
+        assert_eq!(root.children().len(), 1);
+        {
+            let child0 = root.children()[0].clone();
+            assert_eq!(*child0.data(), 1);
+        }
+
+        root.add_child(2);
+        
+        assert_eq!(root.children().len(), 2);
+        {
+            let child0 = root.children()[0].clone();
+            let child1 = root.children()[1].clone();
+            assert_eq!(*child0.data(), 1);
+            assert_eq!(*child1.data(), 2);
+        }
     }
 }
