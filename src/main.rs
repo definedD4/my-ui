@@ -6,6 +6,7 @@ mod primitives;
 mod tree;
 mod window;
 mod element;
+mod property;
 
 use std::fmt::Display;
 
