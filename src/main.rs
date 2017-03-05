@@ -7,6 +7,7 @@ mod tree;
 mod window;
 mod element;
 mod property;
+mod render;
 
 use std::fmt::Display;
 

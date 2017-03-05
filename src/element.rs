@@ -1,7 +1,12 @@
+use primitives::*;
 use tree;
+use render::Renderer;
 
 pub trait Element {
-
+    fn init(&mut self, node: ElementNodeRef);
+    fn measure(&self, node: ElementNodeRef) -> Size;
+    fn layout(&mut self, node: ElementNodeRef, container: Size);
+    fn render(&self, node: ElementNodeRef, renderer: &Renderer);
 }
 
 pub type ElementTree = tree::Tree<ElementContext>;
@@ -25,6 +30,23 @@ impl ElementContext {
 
     fn set_node(&mut self, node: ElementNodeWeakRef) {
         self.node = node;
+    }
+
+    pub fn node(&self) -> ElementNodeRef {
+        self.node.upgrade().unwrap()
+    }
+
+    pub fn measure(&self) -> Size {
+        self.element.measure(self.node())
+    }
+
+    pub fn layout(&mut self, container: Size) {
+        let node = self.node();
+        self.element.layout(node, container);
+    }
+
+    pub fn render(&self, renderer: &Renderer) {
+        self.element.render(self.node(), renderer);
     }
 }
 

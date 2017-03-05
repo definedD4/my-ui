@@ -36,19 +36,19 @@ impl PropertyTraits {
     }
 }
 
-pub struct Property<T> {
+pub struct Property<T: Copy> {
     name: String,
     traits: PropertyTraits,
     source: Box<ValueSource<T>>,
 }
 
-pub trait ValueSource<T> {
+pub trait ValueSource<T: Copy> {
     fn traits(&self) -> PropertyTraits;
     fn get(&self) -> T;
     fn set(&self, value: T);
 }
 
-impl<T> Property<T> {
+impl<T: Copy> Property<T> {
     pub fn new<S: Into<String>>(name: S, traits: PropertyTraits, source: Box<ValueSource<T>>) -> Result<Property<T>, String> {
         if !traits.suits(source.traits()) {
             Err("Unsiutable value source provided".to_owned())

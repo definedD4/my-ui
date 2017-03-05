@@ -27,13 +27,28 @@ impl Window {
         self.tree.set_root_element(element);
     }
 
+    pub fn run_loop(&self) {
+        loop {
+            for event in self.window.wait_events() {
+                if let Some(root) = self.tree.root() {
+                    root.data().render(root.clone());
+                }
 
+                self.window.swap_buffers();
+
+                match event {
+                    glutin::Event::Closed => break,
+                    _ => ()
+                }
+            }
+        }
+    }
 }
 
 impl WindowBuilder {
     pub fn new() -> WindowBuilder {
         WindowBuilder { 
-            size: Size(600.0, 400.0),
+            size: Size::new(600.0, 400.0),
             title: String::new(),
             content: None,
         }
@@ -42,7 +57,7 @@ impl WindowBuilder {
     pub fn build(self) -> Window {
         // TODO Add Result propagation
         let mut window = glutin::WindowBuilder::new()
-            .with_dimensions(self.size.0 as u32, self.size.1 as u32)
+            .with_dimensions(self.size.w as u32, self.size.h as u32)
             .with_title(self.title)
             .build()
             .map(|w| Window::new(w))
