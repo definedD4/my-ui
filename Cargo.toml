@@ -5,3 +5,4 @@ authors = ["Dima"]
 
 [dependencies]
 glium = "*"
+log = "*"

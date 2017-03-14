@@ -37,7 +37,7 @@ impl<'a> Renderer<'a> {
         ((x / self.size.w * 2.0 - 1.0, 1.0 - y / self.size.h * 2.0), (w / self.size.w * 2.0, h / self.size.h * 2.0))
     }
 
-    pub fn sub_renderer(&'a mut self, rect: Rect) -> Renderer<'a> {
+    pub fn sub_renderer<'b: 'a>(&'b mut self, rect: Rect) -> Renderer<'b> {
         Renderer::new(self.surface, self.rendering_context, self.size, self.viewport.transform_to_outer(rect))
     }
 
@@ -147,7 +147,7 @@ impl RenderingContext {
     pub fn draw_rect(&self, surface: &mut glium::Frame, pos: (f32, f32), size: (f32, f32), color: Color) {
         use glium::Surface;
 
-        println!("[Renderer] Drawing rect with pos: {:?} size: {:?}", &pos, &size);
+        info!("[Renderer] Drawing rect with pos: {:?} size: {:?}", &pos, &size);
 
         let uniforms = uniform! {
             pos: pos,

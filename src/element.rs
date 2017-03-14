@@ -18,13 +18,15 @@ pub type ElementNodeWeakRef = tree::NodeWeakRef<ElementContext>;
 pub struct ElementContext {
     element: Box<Element>,
     node: ElementNodeWeakRef,
+    rect: Rect,
 }
 
 impl ElementContext {
     fn new(element: Box<Element>, node: ElementNodeWeakRef) -> ElementContext {
         ElementContext {
             element: element,
-            node: node
+            node: node,
+            rect: Rect::zero(),
         }
     }
 
@@ -34,6 +36,19 @@ impl ElementContext {
 
     pub fn node(&self) -> ElementNodeRef {
         self.node.upgrade().unwrap()
+    }
+
+    pub fn rect(&self) -> Rect {
+        self.rect
+    }
+
+    pub fn set_rect(&mut self, rect: Rect) {
+        self.rect = rect;
+    }
+
+    pub fn init(&mut self) {
+        let node = self.node();
+        self.element.init(node);
     }
 
     pub fn measure(&self) -> Size {
@@ -46,6 +61,8 @@ impl ElementContext {
     }
 
     pub fn render(&self, renderer: &mut Renderer) {
+        let rect = self.rect;
+        // let sub_renderer = renderer.sub_renderer(rect);
         self.element.render(self.node(), renderer);
     }
 }

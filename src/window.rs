@@ -34,27 +34,31 @@ impl Window {
 
     fn set_content(&mut self, element: Box<Element>) {
         self.tree.set_root_element(element);
+        let mut root = self.tree.root().unwrap();
+        root.data_mut().init();
     }
 
     pub fn run_loop(&mut self) {
         use glium::glutin::Event::*;
 
         'main: loop {
+            self.layout_content();
             self.render();
             for event in self.display.wait_events() {
                 match event {
                     Closed => {
-                        println!("[Window] Event: Closed");
+                        info!("[Window] Event: Closed");
                         break 'main;
                     },
                     Refresh => { 
-                        println!("[Window] Event: Refresh");
+                        info!("[Window] Event: Refresh");
                         self.render();
                     },
                     Resized(w, h) => {
-                        println!("[Window] Event: Resized ({}, {})", w, h);
+                        info!("[Window] Event: Resized ({}, {})", w, h);
 
                         self.size = Size::new(w as f32, h as f32);
+                        self.layout_content();
                         self.render();
                     }
                     _ => {},
@@ -71,6 +75,12 @@ impl Window {
         }
 
         //self.display.swap_buffers().unwrap();
+    }
+
+    fn layout_content(&self) {
+        if let Some(root) = self.tree.root() {
+            root.data_mut().layout(self.size);
+        }
     }
 }
 

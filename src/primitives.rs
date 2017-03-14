@@ -112,6 +112,20 @@ impl Rect {
         }
     }
 
+    pub fn from_bounds(right: f32, top: f32, left: f32, bottom: f32) -> Rect {
+        Rect {
+            pos: Point::new(left, top),
+            size: Size::new(right - left, bottom - top),
+        }
+    }
+
+    pub fn zero() -> Rect {
+        Rect {
+            pos: Point::zero(),
+            size: Size::zero(),
+        }
+    }
+
     pub fn left(&self) -> f32 {
         self.pos.x
     }
@@ -138,5 +152,37 @@ impl Rect {
 
     pub fn transform_to_inner(&self, rect: Rect) -> Rect {
         Rect::pos_size(rect.pos - self.pos, rect.size)
+    }
+
+    pub fn expand(&self, margin: Thickness) -> Rect {
+        Rect::from_bounds(self.right() + margin.right, self.top() - margin.top,
+                          self.left() - margin.left, self.bottom() + margin.bottom)
+    }
+
+    pub fn inset(&self, margin: Thickness) -> Rect {
+        Rect::from_bounds(self.right() - margin.right, self.top() + margin.top,
+                          self.left() + margin.left, self.bottom() - margin.bottom)
+    }
+}
+
+pub struct Thickness {
+    pub right: f32,
+    pub top: f32,
+    pub left: f32,
+    pub bottom: f32,
+}
+
+impl Thickness {
+    pub fn new(right: f32, top: f32, left: f32, bottom: f32) -> Thickness {
+        Thickness {
+            right: right,
+            top: top,
+            left: left,
+            bottom: bottom,
+        }
+    }
+
+    pub fn hv(horizontal: f32, vertical: f32) -> Thickness {
+        Thickness::new(horizontal, vertical, horizontal, vertical)
     }
 }
