@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::ops::{Add, Sub};
  
 #[derive(Copy, Clone, Debug)]
 pub struct Point {
@@ -15,8 +15,28 @@ impl Point {
         Point::new(t.0, t.1)
     }
 
+    pub fn zero() -> Point {
+        Point::new(0f32, 0f32)
+    }
+
     pub fn to_tuple(&self) -> (f32, f32) {
         (self.x, self.y)
+    }
+}
+
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, rhs: Point) -> Point {
+        Point::new(self.x + rhs.x, self.y + rhs.y)
+    }
+}
+
+impl Sub for Point {
+    type Output = Point;
+
+    fn sub(self, rhs: Point) -> Point {
+        Point::new(self.x - rhs.x, self.y - rhs.y)
     }
 }
 
@@ -31,20 +51,16 @@ impl Size {
         Size { w: w, h: h }
     }
 
+    pub fn zero() -> Size {
+        Size::new(0.0, 0.0)
+    }
+
     pub fn from_tuple(t: (f32, f32)) -> Size {
         Size::new(t.0, t.1)
     }
 
     pub fn to_tuple(&self) -> (f32, f32) {
         (self.w, self.h)
-    }
-}
-
-impl Add for Point {
-    type Output = Point;
-
-    fn add(self, rhs: Point) -> Point {
-        Point::new(self.x + rhs.x, self.y + rhs.y)
     }
 }
 
@@ -65,6 +81,14 @@ impl Color {
             b: b
         }
     }
+
+    pub fn to_tuple_argb(&self) -> (f32, f32, f32, f32){
+        (self.a, self.r, self.g, self.b)
+    }
+
+    pub fn to_tuple_rgb(&self) -> (f32, f32, f32){
+        (self.r, self.g, self.b)
+    }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -78,6 +102,13 @@ impl Rect {
         Rect {
             pos: pos,
             size: size
+        }
+    }
+
+    pub fn from_size(size: Size) -> Rect {
+        Rect {
+            pos: Point::zero(),
+            size: size,
         }
     }
 
@@ -95,5 +126,17 @@ impl Rect {
 
     pub fn top(&self) -> f32 {
         self.pos.y
+    }
+
+    pub fn to_pos_size_tuple(&self) -> ((f32, f32), (f32, f32)) {
+        (self.pos.to_tuple(), self.size.to_tuple())
+    }
+
+    pub fn transform_to_outer(&self, rect: Rect) -> Rect {
+        Rect::pos_size(self.pos + rect.pos, rect.size)
+    }
+
+    pub fn transform_to_inner(&self, rect: Rect) -> Rect {
+        Rect::pos_size(rect.pos - self.pos, rect.size)
     }
 }

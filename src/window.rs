@@ -1,12 +1,17 @@
-use glutin;
+use glium;
+use glium::glutin;
 
 use primitives::*;
 use tree;
 use element::*;
+use render::*;
 
 pub struct Window {
-    window: glutin::Window,
+    display: glium::Display,
+    rendering_context: RenderingContext,
     tree: ElementTree,
+    size: Size,
+    title: String,
 }
 
 pub struct WindowBuilder {
@@ -16,10 +21,14 @@ pub struct WindowBuilder {
 }
 
 impl Window {
-    fn new(window: glutin::Window) -> Window {
+    fn new(display: glium::Display, size: Size, title: String) -> Window {
+        let rendering_context = RenderingContext::new(&display);
         Window { 
-            window: window,
+            display: display,
+            rendering_context: rendering_context,
             tree: tree::Tree::new(),
+            size: size,
+            title: title,
         }
     }
 
@@ -27,21 +36,41 @@ impl Window {
         self.tree.set_root_element(element);
     }
 
-    pub fn run_loop(&self) {
-        loop {
-            for event in self.window.wait_events() {
-                if let Some(root) = self.tree.root() {
-                    root.data().render(root.clone());
-                }
+    pub fn run_loop(&mut self) {
+        use glium::glutin::Event::*;
 
-                self.window.swap_buffers();
-
+        'main: loop {
+            self.render();
+            for event in self.display.wait_events() {
                 match event {
-                    glutin::Event::Closed => break,
-                    _ => ()
+                    Closed => {
+                        println!("[Window] Event: Closed");
+                        break 'main;
+                    },
+                    Refresh => { 
+                        println!("[Window] Event: Refresh");
+                        self.render();
+                    },
+                    Resized(w, h) => {
+                        println!("[Window] Event: Resized ({}, {})", w, h);
+
+                        self.size = Size::new(w as f32, h as f32);
+                        self.render();
+                    }
+                    _ => {},
                 }
             }
         }
+    }
+
+    fn render(&self) {
+        if let Some(root) = self.tree.root() {
+            let mut suface = self.display.draw();
+            root.data().render(&mut Renderer::new(&mut suface, &self.rendering_context, self.size, Rect::from_size(self.size)));
+            suface.finish().unwrap();
+        }
+
+        //self.display.swap_buffers().unwrap();
     }
 }
 
@@ -55,12 +84,15 @@ impl WindowBuilder {
     }
 
     pub fn build(self) -> Window {
+        use glium::DisplayBuild;
+
         // TODO Add Result propagation
         let mut window = glutin::WindowBuilder::new()
             .with_dimensions(self.size.w as u32, self.size.h as u32)
-            .with_title(self.title)
-            .build()
-            .map(|w| Window::new(w))
+            .with_title(self.title.clone())
+            .with_vsync()
+            .build_glium()
+            .map(|display| Window::new(display, self.size, self.title.clone()))
             .unwrap();
         if let Some(content) = self.content {
             window.set_content(content);

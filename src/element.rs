@@ -6,7 +6,7 @@ pub trait Element {
     fn init(&mut self, node: ElementNodeRef);
     fn measure(&self, node: ElementNodeRef) -> Size;
     fn layout(&mut self, node: ElementNodeRef, container: Size);
-    fn render(&self, node: ElementNodeRef, renderer: &Renderer);
+    fn render(&self, node: ElementNodeRef, renderer: &mut Renderer);
 }
 
 pub type ElementTree = tree::Tree<ElementContext>;
@@ -45,7 +45,7 @@ impl ElementContext {
         self.element.layout(node, container);
     }
 
-    pub fn render(&self, renderer: &Renderer) {
+    pub fn render(&self, renderer: &mut Renderer) {
         self.element.render(self.node(), renderer);
     }
 }

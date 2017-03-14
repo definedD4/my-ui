@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["Dima"]
 
 [dependencies]
-glutin = "*"
+glium = "*"
