@@ -2,14 +2,13 @@ use glium;
 use glium::glutin;
 
 use primitives::*;
-use tree;
-use element::*;
+use tree::*; 
 use render::*;
 
 pub struct Window {
     display: glium::Display,
     rendering_context: RenderingContext,
-    tree: ElementTree,
+    tree: Tree,
     size: Size,
     title: String,
 }
@@ -26,16 +25,14 @@ impl Window {
         Window { 
             display: display,
             rendering_context: rendering_context,
-            tree: tree::Tree::new(),
+            tree: Tree::new(),
             size: size,
             title: title,
         }
     }
 
-    fn set_content(&mut self, element: Box<Element>) {
-        self.tree.set_root_element(element);
-        let mut root = self.tree.root().unwrap();
-        root.data_mut().init();
+    pub fn set_content(&mut self, element: Box<Element>) -> NodeRef {
+        self.tree.set_root(Some(element)).unwrap()
     }
 
     pub fn run_loop(&mut self) {
@@ -70,7 +67,7 @@ impl Window {
     fn render(&self) {
         if let Some(root) = self.tree.root() {
             let mut suface = self.display.draw();
-            root.data().render(&mut Renderer::new(&mut suface, &self.rendering_context, self.size, Rect::from_size(self.size)));
+            root.render(&mut Renderer::new(&mut suface, &self.rendering_context, self.size, Rect::from_size(self.size)));
             suface.finish().unwrap();
         }
 
@@ -78,8 +75,8 @@ impl Window {
     }
 
     fn layout_content(&self) {
-        if let Some(root) = self.tree.root() {
-            root.data_mut().layout(self.size);
+        if let Some(mut root) = self.tree.root() {
+            root.layout(self.size);
         }
     }
 }

@@ -6,7 +6,7 @@ pub struct Renderer<'a> {
     surface: &'a mut glium::Frame,
     rendering_context: &'a RenderingContext,
     size: Size,
-    viewport: Rect,
+    viewport_stack: Vec<Rect>,
 }
 
 #[derive(Copy, Clone)]
@@ -27,22 +27,35 @@ impl<'a> Renderer<'a> {
         Renderer { 
             surface: surface,
             size: size,
-            viewport: viewport,
+            viewport_stack: vec![viewport],
             rendering_context: rendering_context,
         }
     }
 
     fn to_relative(&self, rect: Rect) ->((f32, f32), (f32, f32)) {
-        let ((x, y), (w, h)) = self.viewport.transform_to_outer(rect).to_pos_size_tuple();
+        let ((x, y), (w, h)) = self.viewport().transform_to_outer(rect).to_pos_size_tuple();
         ((x / self.size.w * 2.0 - 1.0, 1.0 - y / self.size.h * 2.0), (w / self.size.w * 2.0, h / self.size.h * 2.0))
     }
 
-    pub fn sub_renderer<'b: 'a>(&'b mut self, rect: Rect) -> Renderer<'b> {
+    fn viewport(&self) -> Rect {
+        self.viewport_stack.last().unwrap().clone()
+    }
+
+    /*pub fn sub_renderer(&'a mut self, rect: Rect) -> Renderer<'a> {
         Renderer::new(self.surface, self.rendering_context, self.size, self.viewport.transform_to_outer(rect))
+    }*/
+
+    pub fn push_rect(&mut self, rect: Rect) {
+        let transformed = self.viewport().transform_to_outer(rect);
+        self.viewport_stack.push(transformed);
+    }
+
+    pub fn pop_rect(&mut self) {
+        self.viewport_stack.pop();
     }
 
     pub fn clear(&mut self, color: Color) {
-        let size = self.viewport.size.clone();
+        let size = self.viewport().size.clone();
         self.rect(Rect::from_size(size), color);
     }
 

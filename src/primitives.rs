@@ -165,6 +165,7 @@ impl Rect {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub struct Thickness {
     pub right: f32,
     pub top: f32,
@@ -184,5 +185,9 @@ impl Thickness {
 
     pub fn hv(horizontal: f32, vertical: f32) -> Thickness {
         Thickness::new(horizontal, vertical, horizontal, vertical)
+    }
+
+    pub fn rect_in(&self, container: Size) -> Rect {
+        Rect::from_bounds(container.w - self.right, self.top, self.left, container.h - self.bottom)
     }
 }
