@@ -65,8 +65,10 @@ impl Window {
     }
 
     fn render(&self) {
+        use glium::Surface;
         if let Some(root) = self.tree.root() {
             let mut suface = self.display.draw();
+            suface.clear_color(1.0, 1.0, 1.0, 1.0);
             root.render(&mut Renderer::new(&mut suface, &self.rendering_context, self.size, Rect::from_size(self.size)));
             suface.finish().unwrap();
         }

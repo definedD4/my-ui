@@ -74,9 +74,6 @@ impl Element for TestBorder {
     fn render(&self, node: NodeRef, renderer: &mut Renderer) {
         info!("[TestBorder] Render");
         renderer.clear(Color::argb(1.0, 0.0, 1.0, 0.0));
-        if let Some(content) = self.content() {
-            content.render(renderer);
-        }
     }
 }
 

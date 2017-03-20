@@ -146,6 +146,11 @@ impl NodeRef {
     pub fn render(&self, renderer: &mut Renderer) {
         renderer.push_rect(self.node.borrow().rect);
         self.element.borrow().render(self.clone(), renderer);
+
+        for child in self.children().iter() {
+            child.render(renderer);
+        }
+
         renderer.pop_rect();
     }
 
