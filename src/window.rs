@@ -38,34 +38,32 @@ impl Window {
     pub fn run_loop(&mut self) {
         use glium::glutin::Event::*;
 
-        'main: loop {
-            self.layout_content();
-            self.render();
-            for event in self.display.wait_events() {
-                match event {
-                    Closed => {
-                        info!("[Window] Event: Closed");
-                        break 'main;
-                    },
-                    Refresh => { 
-                        info!("[Window] Event: Refresh");
-                        self.render();
-                    },
-                    Resized(w, h) => {
-                        info!("[Window] Event: Resized ({}, {})", w, h);
-
-                        self.size = Size::new(w as f32, h as f32);
-                        self.layout_content();
-                        self.render();
-                    }
-                    _ => {},
+        self.layout_content();
+        self.render();
+        'main: for event in self.display.wait_events() {
+            match event {
+                Closed => {
+                    info!("[Window] Event: Closed");
+                    break 'main;
+                },
+                Refresh => { 
+                    info!("[Window] Event: Refresh");
+                    self.render();
+                },
+                Resized(w, h) => {
+                    info!("[Window] Event: Resized ({}, {})", w, h);
+                    self.size = Size::new(w as f32, h as f32);
+                    self.layout_content();
+                    self.render();                    
                 }
+                _ => {},
             }
         }
     }
 
     fn render(&self) {
         use glium::Surface;
+        info!("[Window] Render");
         if let Some(root) = self.tree.root() {
             let mut suface = self.display.draw();
             suface.clear_color(1.0, 1.0, 1.0, 1.0);
@@ -77,6 +75,7 @@ impl Window {
     }
 
     fn layout_content(&self) {
+        info!("[Window] Layout");
         if let Some(mut root) = self.tree.root() {
             root.layout(self.size);
         }
