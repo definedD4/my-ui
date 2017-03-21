@@ -157,6 +157,10 @@ impl NodeRef {
     pub fn layout(&self, container: Size) {
         self.element.borrow_mut().layout(self.clone(), container);
     }
+
+    pub fn measure(&self) -> Size {
+        self.element.borrow().measure(self.clone())
+    }
 }
 
 impl Clone for NodeRef {

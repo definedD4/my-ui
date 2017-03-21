@@ -40,21 +40,20 @@ impl Window {
 
         self.layout_content();
         self.render();
+        
         'main: for event in self.display.wait_events() {
+            info!("[Window] Event: {:?}", event);
             match event {
                 Closed => {
-                    info!("[Window] Event: Closed");
                     break 'main;
                 },
                 Refresh => { 
-                    info!("[Window] Event: Refresh");
                     self.render();
                 },
                 Resized(w, h) => {
-                    info!("[Window] Event: Resized ({}, {})", w, h);
                     self.size = Size::new(w as f32, h as f32);
                     self.layout_content();
-                    self.render();                    
+                    self.render();       
                 }
                 _ => {},
             }
@@ -70,8 +69,6 @@ impl Window {
             root.render(&mut Renderer::new(&mut suface, &self.rendering_context, self.size, Rect::from_size(self.size)));
             suface.finish().unwrap();
         }
-
-        //self.display.swap_buffers().unwrap();
     }
 
     fn layout_content(&self) {
