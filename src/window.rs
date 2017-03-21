@@ -38,24 +38,45 @@ impl Window {
     pub fn run_loop(&mut self) {
         use glium::glutin::Event::*;
 
+        let proxy = self.display.get_window().unwrap().create_window_proxy();
+
         self.layout_content();
         self.render();
         
-        'main: for event in self.display.wait_events() {
-            info!("[Window] Event: {:?}", event);
-            match event {
-                Closed => {
-                    break 'main;
-                },
-                Refresh => { 
-                    self.render();
-                },
-                Resized(w, h) => {
-                    self.size = Size::new(w as f32, h as f32);
-                    self.layout_content();
-                    self.render();       
+        'main: loop {
+            let (mut render, mut layout) = (false, false);
+            let mut events_recieved = 0u32;
+            'events: for event in self.display.wait_events() {
+                info!("[Window] Event: {:?}", event);
+                events_recieved += 1;
+                match event {
+                    Awakened => {
+                        break 'events;
+                    }
+                    Closed => {
+                        break 'main;
+                    },
+                    Refresh => { 
+                        render = true;
+                        proxy.wakeup_event_loop();
+                    },
+                    Resized(w, h) => {
+                        self.size = Size::new(w as f32, h as f32);
+                        render = true;
+                        layout = true;
+                        proxy.wakeup_event_loop();       
+                    }
+                    _ => {},
                 }
-                _ => {},
+            }
+
+            info!("[Window] Events recieved: {}", events_recieved);
+
+            if layout {
+                self.layout_content();
+            }
+            if render {
+                self.render();
             }
         }
     }
