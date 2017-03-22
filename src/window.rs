@@ -44,7 +44,7 @@ impl Window {
         self.render();
         
         'main: loop {
-            let (mut render, mut layout) = (false, false);
+            let (mut render, mut layout, mut wakeup_scheduled) = (false, false, false);
             let mut events_recieved = 0u32;
             'events: for event in self.display.wait_events() {
                 info!("[Window] Event: {:?}", event);
@@ -58,13 +58,19 @@ impl Window {
                     },
                     Refresh => { 
                         render = true;
-                        proxy.wakeup_event_loop();
+                        if !wakeup_scheduled {
+                            wakeup_scheduled = true;
+                            proxy.wakeup_event_loop();
+                        }
                     },
                     Resized(w, h) => {
                         self.size = Size::new(w as f32, h as f32);
                         render = true;
                         layout = true;
-                        proxy.wakeup_event_loop();       
+                        if !wakeup_scheduled {
+                            wakeup_scheduled = true;
+                            proxy.wakeup_event_loop();
+                        }      
                     }
                     _ => {},
                 }

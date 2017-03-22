@@ -6,9 +6,17 @@ use render::*;
 use std::any::{Any, TypeId};
 
 pub trait Element: Any {
-    fn init(&mut self, node: NodeRef);
-    fn measure(&self, node: NodeRef) -> Size;
-    fn layout(&mut self, node: NodeRef, container: Size);
+    fn init(&mut self, node: NodeRef) {
+
+    }
+
+    fn measure(&self, node: NodeRef) -> Size {
+        Size::zero()
+    }
+    fn layout(&mut self, node: NodeRef, container: Size) {
+        node.set_rect(Rect::from_size(container));
+    }
+
     fn render(&self, node: NodeRef, renderer: &mut Renderer);
 }
 
@@ -228,16 +236,25 @@ impl Tree {
 mod tests {
     use super::*;
 
+    #[derive(Copy, Clone, Eq, PartialEq)]
+    struct StubElement;
+
+    impl Element for StubElement {
+        fn render(&self, node: NodeRef, renderer: &mut Renderer) {
+
+        }
+    }
+
     #[test]
     fn new_tree_has_empty_root() {
-        let tree = Tree::<i32>::new();
+        let tree = Tree::new();
         assert!(tree.root() == None);
     }
 
     #[test]
     fn tree_set_root_sets_root() {
-        let mut tree = Tree::<i32>::new();
-        tree.set_root(Some(42));
+        let mut tree = Tree::new();
+        tree.set_root(Some(Box::new(StubElement)));
 
         let root = tree.root();
 
@@ -245,13 +262,13 @@ mod tests {
 
         let root = root.unwrap();
         
-        assert_eq!(*root.data(), 42);
+        assert!(root.cast_element::<StubElement>().is_some());
     }
 
     #[test]
     fn tree_root_has_no_parrent() {
-        let mut tree = Tree::<i32>::new();
-        tree.set_root(Some(42));
+        let mut tree = Tree::new();
+        tree.set_root(Some(Box::new(StubElement)));
 
         let root = tree.root().unwrap();
 
@@ -260,28 +277,28 @@ mod tests {
 
     #[test]
     fn add_child_adds_child() {
-        let mut tree = Tree::<i32>::new();
-        tree.set_root(Some(0));
+        let mut tree = Tree::new();
+        tree.set_root(Some(Box::new(StubElement)));
         let mut root = tree.root().unwrap();
 
         assert_eq!(root.children().len(), 0);
         
-        root.add_child(1);
+        root.add_child(Box::new(StubElement));
 
         assert_eq!(root.children().len(), 1);
         {
             let child0 = root.children()[0].clone();
-            assert_eq!(*child0.data(), 1);
+            assert!(child0.cast_element::<StubElement>().is_some());
         }
 
-        root.add_child(2);
+        root.add_child(Box::new(StubElement));
         
         assert_eq!(root.children().len(), 2);
         {
             let child0 = root.children()[0].clone();
             let child1 = root.children()[1].clone();
-            assert_eq!(*child0.data(), 1);
-            assert_eq!(*child1.data(), 2);
+            assert!(child0.cast_element::<StubElement>().is_some());
+            assert!(child1.cast_element::<StubElement>().is_some());
         }
     }
 }

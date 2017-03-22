@@ -1,61 +1,61 @@
 #[derive(Copy, Clone)]
-pub enum PropertyTraits {
+pub enum AccessType {
     ReadOnly,
     WriteOnly,
     ReadWrite,
 }
 
-impl PropertyTraits {
+impl AccessType {
     pub fn read_enabled(&self) -> bool {
         match *self {
-            PropertyTraits::ReadOnly | PropertyTraits::ReadWrite => true,
-            PropertyTraits::WriteOnly => false,
+            AccessType::ReadOnly | AccessType::ReadWrite => true,
+            AccessType::WriteOnly => false,
         }
     }
 
     pub fn write_enabled(&self) -> bool {
         match *self {
-            PropertyTraits::WriteOnly | PropertyTraits::ReadWrite => true,
-            PropertyTraits::ReadOnly => false,
+            AccessType::WriteOnly | AccessType::ReadWrite => true,
+            AccessType::ReadOnly => false,
         }
     }
 
     pub fn read_write_enabled(&self) -> bool {
         match *self {
-            PropertyTraits::ReadWrite => true,
-            PropertyTraits::ReadOnly | PropertyTraits::WriteOnly => false,
+            AccessType::ReadWrite => true,
+            AccessType::ReadOnly | AccessType::WriteOnly => false,
         }
     }
 
-    pub fn suits(&self, other: PropertyTraits) -> bool{
+    pub fn suits(&self, other: AccessType) -> bool{
         match *self {
-            PropertyTraits::ReadOnly => other.read_enabled(),
-            PropertyTraits::WriteOnly => other.write_enabled(),
-            PropertyTraits::ReadWrite => other.read_write_enabled(),
+            AccessType::ReadOnly => other.read_enabled(),
+            AccessType::WriteOnly => other.write_enabled(),
+            AccessType::ReadWrite => other.read_write_enabled(),
         }
     }
 }
 
 pub struct Property<T: Copy> {
     name: String,
-    traits: PropertyTraits,
+    access_type: AccessType,
     source: Box<ValueSource<T>>,
 }
 
 pub trait ValueSource<T: Copy> {
-    fn traits(&self) -> PropertyTraits;
+    fn access_type(&self) -> AccessType;
     fn get(&self) -> T;
     fn set(&self, value: T);
 }
 
 impl<T: Copy> Property<T> {
-    pub fn new<S: Into<String>>(name: S, traits: PropertyTraits, source: Box<ValueSource<T>>) -> Result<Property<T>, String> {
-        if !traits.suits(source.traits()) {
+    pub fn new<S: Into<String>>(name: S, access_type: AccessType, source: Box<ValueSource<T>>) -> Result<Property<T>, String> {
+        if !access_type.suits(source.access_type()) {
             Err("Unsiutable value source provided".to_owned())
         } else {
             Ok(Property { 
                 name: name.into(),
-                traits:traits,
+                access_type:access_type,
                 source: source
             })
         }
@@ -65,19 +65,19 @@ impl<T: Copy> Property<T> {
         &self.name
     }
 
-    pub fn traits(&self) -> PropertyTraits {
-        self.traits
+    pub fn access_type(&self) -> AccessType {
+        self.access_type
     }
 
     pub fn get(&self) -> T {
-        if !self.traits.read_enabled() {
+        if !self.access_type.read_enabled() {
             panic!("Calling get on property with disabled read");
         }
         self.source.get()
     }
 
     pub fn set(&self, value: T) {
-        if !self.traits.write_enabled() {
+        if !self.access_type.write_enabled() {
             panic!("Calling set on property with disabled write");
         }
         self.source.set(value)
@@ -102,7 +102,7 @@ pub mod source {
     }
 
     impl<T> ValueSource<T> for Variable<T> where T: Copy {
-        fn traits(&self) -> PropertyTraits { PropertyTraits::ReadWrite }
+        fn access_type(&self) -> AccessType { AccessType::ReadWrite }
 
         fn get(&self) -> T {
             self.data.get()
@@ -120,19 +120,35 @@ mod tests {
 
     #[test]
     fn property_name_get() {
-        let prop = Property::new("foo", PropertyTraits::ReadWrite, Box::new(source::Variable::new(0))).unwrap();
+        let prop = Property::new("foo", AccessType::ReadWrite, Box::new(source::Variable::new(0))).unwrap();
 
         assert_eq!(prop.name(), "foo");
     }
 
     #[test]
     fn variable_property() {
-        let prop = Property::new("foo", PropertyTraits::ReadWrite, Box::new(source::Variable::new(0))).unwrap();
+        let prop = Property::new("foo", AccessType::ReadWrite, Box::new(source::Variable::new(0))).unwrap();
 
         assert_eq!(prop.get(), 0);
 
         prop.set(3);
 
         assert_eq!(prop.get(), 3);
+    }
+
+    #[test]
+    #[should_panic]
+    fn set_read_only_property() {
+        let prop = Property::new("foo", AccessType::ReadOnly, Box::new(source::Variable::new(0))).unwrap();
+
+        prop.set(3);
+    }
+
+    #[test]
+    #[should_panic]
+    fn read_write_only_property() {
+        let prop = Property::new("foo", AccessType::WriteOnly, Box::new(source::Variable::new(0))).unwrap();
+
+        prop.get();
     }
 }
