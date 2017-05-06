@@ -39,9 +39,11 @@ impl Element for TestElement {
         node.set_rect(Rect::from_size(container).inset(self.margin));
     }
 
-    fn render(&self, node: NodeRef, renderer: &mut Renderer) {
+    fn render(&self, node: NodeRef) -> RenderCommandList {
         info!("[TestElement] Render");
-        renderer.clear(Color::argb(1.0, 1.0, 0.0, 0.0))
+        let mut cmd = RenderCommandList::new();
+        cmd.add(RenderCommand::Clear(Color::argb(1.0, 1.0, 0.0, 0.0)));
+        cmd
     }
 }
 
@@ -71,9 +73,11 @@ impl Element for TestBorder {
         }
     }
 
-    fn render(&self, node: NodeRef, renderer: &mut Renderer) {
+    fn render(&self, node: NodeRef) -> RenderCommandList {
         info!("[TestBorder] Render");
-        renderer.clear(Color::argb(1.0, 0.0, 1.0, 0.0));
+        let mut cmd = RenderCommandList::new();
+        cmd.add(RenderCommand::Clear(Color::argb(1.0, 0.0, 1.0, 0.0)));
+        cmd
     }
 }
 
@@ -152,9 +156,11 @@ impl Element for TestList {
         }
     }
 
-    fn render(&self, node: NodeRef, renderer: &mut Renderer) {
+    fn render(&self, node: NodeRef) -> RenderCommandList {
         info!("[TestList] Render");
-        renderer.clear(Color::argb(1.0, 0.0, 1.0, 0.0));
+        let mut cmd = RenderCommandList::new();
+        cmd.add(RenderCommand::Clear(Color::argb(1.0, 0.0, 1.0, 0.0)));
+        cmd
     }
 }
 
@@ -185,8 +191,9 @@ impl Element for TestListItem {
         children[0].layout(rect.size);
     }
 
-    fn render(&self, node: NodeRef, renderer: &mut Renderer) {
+    fn render(&self, node: NodeRef) -> RenderCommandList {
         info!("[TestListItem] Render");
+        RenderCommandList::new()
     }
 }
 

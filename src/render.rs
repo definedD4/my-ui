@@ -1,6 +1,7 @@
 use primitives::*;
 use glium;
 use glium::glutin;
+use std::collections::LinkedList;
 
 pub struct Renderer<'a> {
     surface: &'a mut glium::Frame,
@@ -62,6 +63,15 @@ impl<'a> Renderer<'a> {
     pub fn rect(&mut self, rect: Rect, color: Color) {
         let (pos, size) = self.to_relative(rect);
         self.rendering_context.draw_rect(self.surface, pos, size, color);
+    }
+
+    pub fn execute(&mut self, commands: RenderCommandList) {
+        for cmd in commands.to_list() {
+            match cmd {
+                RenderCommand::Clear(color) => self.clear(color),
+                RenderCommand::Rect(rect, color) => self.rect(rect, color),
+            }
+        }
     }
 }
 
@@ -171,3 +181,33 @@ impl RenderingContext {
         surface.draw(&self.vertex_buffer, &self.index_buffer, &self.program, &uniforms, &Default::default()).unwrap();
     }
 }
+
+pub enum RenderCommand {
+    Clear(Color),
+    Rect(Rect, Color),
+}
+
+pub struct RenderCommandList {
+    list: LinkedList<RenderCommand>,
+}
+
+impl RenderCommandList {
+    pub fn new() -> RenderCommandList {
+        RenderCommandList {
+            list: LinkedList::new(),
+        }
+    }
+
+    pub fn add(&mut self, command: RenderCommand) {
+        self.list.push_back(command);
+    }
+
+    pub fn add_many(&mut self, commands: RenderCommandList) {
+        self.list.append(&mut commands.to_list());
+    }
+
+    pub fn to_list(self) -> LinkedList<RenderCommand> {
+        self.list
+    }
+}
+

@@ -9,7 +9,7 @@ pub trait Element: Any {
     fn init(&mut self, node: NodeRef);
     fn measure(&self, node: NodeRef) -> Size;
     fn layout(&mut self, node: NodeRef, container: Size);
-    fn render(&self, node: NodeRef, renderer: &mut Renderer);
+    fn render(&self, node: NodeRef) -> RenderCommandList;
 }
 
 impl Element {
@@ -145,7 +145,7 @@ impl NodeRef {
 
     pub fn render(&self, renderer: &mut Renderer) {
         renderer.push_rect(self.node.borrow().rect);
-        self.element.borrow().render(self.clone(), renderer);
+        renderer.execute(self.element.borrow().render(self.clone()));
 
         for child in self.children().iter() {
             child.render(renderer);
