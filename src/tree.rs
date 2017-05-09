@@ -232,8 +232,20 @@ mod tests {
     struct StubElement;
 
     impl Element for StubElement {
-        fn render(&self, node: NodeRef, renderer: &mut Renderer) {
+        fn init(&mut self, node: NodeRef) {
 
+        }
+
+        fn measure(&self, node: NodeRef) -> Size {
+            Size::zero()
+        }
+
+        fn layout(&mut self, node: NodeRef, container: Size) {
+
+        }
+
+        fn render(&self, node: NodeRef) -> RenderCommandList {
+            RenderCommandList::new()
         }
     }
 

@@ -13,6 +13,7 @@ mod window;
 mod property;
 mod render;
 mod my_logger;
+mod msg;
 
 use std::any::Any;
 
